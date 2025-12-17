@@ -5,6 +5,8 @@ from .info import partial_trace, von_neumann_entropy, mutual_information
 from .ops import apply_two_site_unitary
 from .model import D0Model
 from .emergence import mi_matrix, mi_distance, emergent_edges
+from .objective import objective_locality
+from .update import greedy_edge_update
 
 __all__ = [
     "D0Graph",
@@ -16,4 +18,6 @@ __all__ = [
     "mi_matrix",
     "mi_distance",
     "emergent_edges",
+    "objective_locality",
+    "greedy_edge_update",
 ]
