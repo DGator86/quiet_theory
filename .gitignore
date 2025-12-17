@@ -1,0 +1,16 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+
+# Virtualenv
+.venv/
+
+# Editor/OS
+.vscode/
+.DS_Store
+
+# Logs
+*.log
