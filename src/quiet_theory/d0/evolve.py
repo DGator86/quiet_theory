@@ -7,7 +7,7 @@ import numpy as np
 
 from .model import D0Model
 from .rewire import mi_matrix, rewire_topk
-from .update import greedy_edge_update
+from .update import apply_random_two_site_unitary_step
 from .io import save_model
 
 
@@ -57,15 +57,12 @@ def evolve(model: D0Model, config: EvolutionConfig, *, rng: np.random.Generator 
         rng = np.random.default_rng(config.seed)
 
     for step in range(config.steps):
-        edges: list[tuple[int, int]] = list(model.graph.edges)
-        if edges and config.state_updates_per_step > 0:
-            for u in range(config.state_updates_per_step):
-                i, j = edges[u % len(edges)]
-                greedy_edge_update(
-                    model,
-                    i,
-                    j,
-                    trials=config.unitary_trials,
+        if config.state_updates_per_step > 0:
+            for _ in range(config.state_updates_per_step):
+                model.psi = apply_random_two_site_unitary_step(
+                    psi=model.psi,
+                    graph=model.graph,
+                    dims=model.dims,
                     rng=rng,
                 )
 

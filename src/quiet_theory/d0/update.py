@@ -2,8 +2,10 @@
 
 import numpy as np
 
+from .graph import D0Graph
 from .model import D0Model
 from .objective import objective_locality
+from .ops import apply_two_site_unitary
 
 
 def random_unitary_4(rng: np.random.Generator) -> np.ndarray:
@@ -55,3 +57,37 @@ def greedy_edge_update(
         model.apply_edge_unitary(i, j, best_U)
 
     return float(best_f - f0)
+
+
+def _haar_random_unitary(dim: int, rng: np.random.Generator) -> np.ndarray:
+    """
+    Haar-random unitary via QR decomposition of a complex Ginibre matrix.
+    """
+    X = (rng.normal(size=(dim, dim)) + 1j * rng.normal(size=(dim, dim))).astype(np.complex128)
+    Q, R = np.linalg.qr(X)
+    # Fix phases to ensure unitary distributed correctly
+    diag = np.diag(R)
+    ph = diag / np.where(np.abs(diag) == 0, 1.0, np.abs(diag))
+    Q = Q * ph.conj()
+    return Q
+
+
+def apply_random_two_site_unitary_step(
+    *,
+    psi: np.ndarray,
+    graph: D0Graph,
+    dims: list[int] | tuple[int, ...] | np.ndarray,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """
+    Pick a random existing edge (i,j), apply a Haar-random 2-site unitary on that pair.
+    """
+    edges = list(graph.edges)
+    if not edges:
+        return psi
+
+    i, j = edges[int(rng.integers(0, len(edges)))]
+    di = int(dims[int(i)])
+    dj = int(dims[int(j)])
+    U = _haar_random_unitary(di * dj, rng)
+    return apply_two_site_unitary(psi, U, int(i), int(j), list(dims))
