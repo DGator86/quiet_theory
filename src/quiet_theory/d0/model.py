@@ -28,5 +28,4 @@ class D0Model:
         return float(mutual_information(self.rho(), A=tuple(A), B=tuple(B), dims=self.dims))
 
     def apply_edge_unitary(self, i: int, j: int, U: np.ndarray) -> None:
-        # IMPORTANT: apply_two_site_unitary signature is positional: (psi, U, a, b, dims)
-        self.psi = apply_two_site_unitary(self.psi, U, i, j, self.dims)
+        self.psi = apply_two_site_unitary(self.psi, U, dims=self.dims, i=i, j=j)

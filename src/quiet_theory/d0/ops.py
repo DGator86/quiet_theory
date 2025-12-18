@@ -1,88 +1,76 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import numpy as np
 
 
 def apply_two_site_unitary(
     psi: np.ndarray,
-    U: np.ndarray | None = None,
+    U: np.ndarray,
     a: int | None = None,
     b: int | None = None,
-    dims: list[int] | tuple[int, ...] | None = None,
+    dims: Sequence[int] | None = None,
     *,
+    # Back-compat keywords (older call sites / tests)
     i: int | None = None,
     j: int | None = None,
 ) -> np.ndarray:
     """
-    Apply a two-site unitary ``U`` to a pure state ``psi``.
+    Apply a 2-site unitary U to the full statevector psi on sites (a,b).
 
-    The API is intentionally tolerant to both positional and keyword-based
-    invocations. Indices can be provided as ``a``/``b`` or ``i``/``j`` and the
-    unitary can be supplied positionally or via the ``U`` keyword.
+    Accepts either:
+      - positional/keyword: (psi, U, a, b, dims)
+      - keyword legacy:     (psi, dims=..., i=..., j=..., U=...)
 
-    Parameters
-    ----------
-    psi:
-        State vector of shape ``(D,)`` where ``D = prod(dims)``.
-    U:
-        Two-site unitary of shape ``(d_a * d_b, d_a * d_b)``.
-    a, b / i, j:
-        Site indices. ``a``/``b`` take precedence; ``i``/``j`` are aliases.
-    dims:
-        Iterable of local dimensions ``[d0, d1, ..., d_{n-1}]``.
+    Returns a new statevector (same shape as psi).
     """
-
     if dims is None:
-        raise ValueError("dims must be provided to apply_two_site_unitary")
+        raise TypeError("dims must be provided")
 
-    dims_l = list(dims)
-    n = len(dims_l)
-
-    if a is None:
+    # Allow legacy i/j aliases
+    if a is None and i is not None:
         a = i
-    if b is None:
+    if b is None and j is not None:
         b = j
 
     if a is None or b is None:
-        raise ValueError("Site indices must be provided via a/b or i/j")
+        raise TypeError("Must provide site indices (a,b) or (i,j).")
 
-    if U is None:
-        raise ValueError("Unitary U must be provided")
+    a = int(a)
+    b = int(b)
 
     if a == b:
-        raise ValueError("Sites a and b must be different.")
+        raise ValueError("Sites must be distinct (a != b).")
+
+    n = len(dims)
     if not (0 <= a < n and 0 <= b < n):
-        raise ValueError(
-            f"Site indices out of range: a={a}, b={b}, len(dims)={n}"
-        )
+        raise ValueError("Site index out of range.")
 
-    di, dj = dims_l[a], dims_l[b]
-    Dij = di * dj
-    if U.shape != (Dij, Dij):
-        raise ValueError(
-            f"U must be shape ({Dij},{Dij}); got {U.shape} for a={a}, b={b}, len(dims)={n}"
-        )
+    da = int(dims[a])
+    db = int(dims[b])
+    if U.shape != (da * db, da * db):
+        raise ValueError(f"U must have shape {(da*db, da*db)} for dims[a]*dims[b]={da*db}.")
 
-    D = int(np.prod(dims_l))
-    psi = np.asarray(psi, dtype=np.complex128).reshape(D)
+    psi = np.asarray(psi, dtype=np.complex128).reshape(-1)
+    if psi.size != int(np.prod(dims)):
+        raise ValueError("psi length does not match product(dims).")
 
-    # reshape state into tensor
-    amp = psi.reshape(dims_l)
+    # Reshape to tensor
+    psi_t = psi.reshape(tuple(int(d) for d in dims))
 
-    # bring a,b to the end
-    rest = [k for k in range(n) if k not in (a, b)]
-    perm = rest + [a, b]
-    inv_perm = np.argsort(perm)
+    # Move axes a,b to the front
+    axes = [a, b] + [k for k in range(n) if k not in (a, b)]
+    inv = np.argsort(axes)
 
-    amp_p = np.transpose(amp, axes=perm)
-    Dr = int(np.prod([dims_l[k] for k in rest])) if rest else 1
-    amp_p = amp_p.reshape((Dr, Dij))
+    front = np.transpose(psi_t, axes=axes).reshape(da * db, -1)
 
-    # apply U on last factor
-    amp_p2 = amp_p @ U.T  # column action in computational basis convention
+    # Apply U on the (a,b) block
+    front2 = U @ front
 
-    # reshape back
-    amp_p2 = amp_p2.reshape([dims_l[k] for k in rest] + [di, dj])
-    amp2 = np.transpose(amp_p2, axes=inv_perm)
+    # Restore original ordering
+    rest_dims = [int(dims[k]) for k in range(n) if k not in (a, b)]
+    out_t = front2.reshape([da, db] + rest_dims)
+    out = np.transpose(out_t, axes=inv).reshape(-1)
 
-    return amp2.reshape(D)
+    return out
