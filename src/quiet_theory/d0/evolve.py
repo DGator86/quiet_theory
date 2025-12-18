@@ -26,10 +26,10 @@ class EvolutionConfig:
     seed: int | None = None
 
     # Optional backward-compat alias
-    psi_updates_per_step: int | None = None
+    psi_updates_per_step: int = 0
 
     def __post_init__(self) -> None:
-        if self.psi_updates_per_step is not None and self.state_updates_per_step == 0:
+        if self.state_updates_per_step == 0 and self.psi_updates_per_step != 0:
             self.state_updates_per_step = int(self.psi_updates_per_step)
         if self.steps < 0:
             raise ValueError("steps must be non-negative")
