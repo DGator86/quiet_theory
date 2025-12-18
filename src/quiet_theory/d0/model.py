@@ -1,6 +1,7 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Iterable
 
 import numpy as np
 
@@ -11,33 +12,21 @@ from .ops import apply_two_site_unitary
 
 @dataclass
 class D0Model:
-    """
-    Minimal D0 model container:
-    - Graph substrate
-    - Local dimensions
-    - Pure state vector
-    """
     graph: D0Graph
     dims: list[int]
     psi: np.ndarray
 
     def rho(self) -> np.ndarray:
-        psi = self.psi.reshape(-1, 1)
+        psi = self.psi.reshape((-1, 1))
         return psi @ psi.conj().T
 
-    def entropy(self, A: tuple[int, ...]) -> float:
-        rho_A = partial_trace(self.rho(), keep=A, dims=self.dims)
-        return von_neumann_entropy(rho_A)
+    def entropy(self, A: Iterable[int]) -> float:
+        rhoA = partial_trace(self.rho(), dims=self.dims, keep=tuple(A))
+        return float(von_neumann_entropy(rhoA))
 
-    def mi(self, A: tuple[int, ...], B: tuple[int, ...]) -> float:
-        return mutual_information(self.rho(), A=A, B=B, dims=self.dims)
+    def mi(self, A: Iterable[int], B: Iterable[int]) -> float:
+        return float(mutual_information(self.rho(), A=tuple(A), B=tuple(B), dims=self.dims))
 
     def apply_edge_unitary(self, i: int, j: int, U: np.ndarray) -> None:
-        # Keep the call positional to match the apply_two_site_unitary contract
-        # and avoid keyword drift between callers and implementation.
-        self.psi = apply_two_site_unitary(self.psi, self.dims, i, j, U)
-        # renormalize (numerical drift guard)
-        nrm = np.linalg.norm(self.psi)
-        if nrm == 0 or not np.isfinite(nrm):
-            raise ValueError("State became invalid after applying unitary.")
-        self.psi = self.psi / nrm
+        # IMPORTANT: apply_two_site_unitary signature is positional: (psi, U, a, b, dims)
+        self.psi = apply_two_site_unitary(self.psi, U, i, j, self.dims)
