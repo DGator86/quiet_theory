@@ -20,7 +20,7 @@ def objective_locality(rho: np.ndarray, graph: D0Graph, dims: list[int] | tuple[
             mij = float(mutual_information(rho, A=(i,), B=(j,), dims=dims))
             total -= lam * mij
 
-    for (i, j) in graph.edges():
+    for (i, j) in graph.edges:
         mij = float(mutual_information(rho, A=(i,), B=(j,), dims=dims))
         total += mij
 

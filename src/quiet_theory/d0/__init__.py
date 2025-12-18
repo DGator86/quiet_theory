@@ -9,6 +9,7 @@ from .objective import objective_locality
 from .update import greedy_edge_update
 from .rewire import mi_matrix, rewire_topk
 from .io import save_model, load_model
+from .evolve import EvolutionConfig, evolve
 
 __all__ = [
     "D0Graph",
@@ -26,4 +27,6 @@ __all__ = [
     "rewire_topk",
     "save_model",
     "load_model",
+    "EvolutionConfig",
+    "evolve",
 ]

@@ -33,7 +33,9 @@ class D0Model:
         return mutual_information(self.rho(), A=A, B=B, dims=self.dims)
 
     def apply_edge_unitary(self, i: int, j: int, U: np.ndarray) -> None:
-        self.psi = apply_two_site_unitary(self.psi, dims=self.dims, i=i, j=j, U=U)
+        # Keep the call positional to match the apply_two_site_unitary contract
+        # and avoid keyword drift between callers and implementation.
+        self.psi = apply_two_site_unitary(self.psi, self.dims, i, j, U)
         # renormalize (numerical drift guard)
         nrm = np.linalg.norm(self.psi)
         if nrm == 0 or not np.isfinite(nrm):
