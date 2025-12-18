@@ -24,6 +24,7 @@ def main() -> None:
         unitary_trials=8,
         run_name="evolve_demo",
         seed=1,
+        save_dir="artifacts",
     )
 
     evolve(model, cfg, rng=rng)
@@ -31,6 +32,9 @@ def main() -> None:
     print("Final edges:", sorted(model.graph.edges))
     M = mi_matrix(model.rho(), model.dims)
     print("MI matrix:\n", np.round(M, 4))
+    if cfg.save_dir is not None:
+        metrics_path = f"{cfg.save_dir}/{cfg.run_name}_metrics.jsonl"
+        print("Metrics written to", metrics_path)
 
 
 if __name__ == "__main__":

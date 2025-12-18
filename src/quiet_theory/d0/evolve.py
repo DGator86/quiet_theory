@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import json
 
 import numpy as np
 
 from .model import D0Model
+from .objective import objective_locality
 from .rewire import mi_matrix, rewire_topk
 from .update import apply_random_two_site_unitary_step
 from .io import save_model
@@ -56,7 +58,15 @@ def evolve(model: D0Model, config: EvolutionConfig, *, rng: np.random.Generator 
     if rng is None:
         rng = np.random.default_rng(config.seed)
 
+    metrics_path = None
+    if config.save_dir is not None:
+        config.save_dir.mkdir(parents=True, exist_ok=True)
+        metrics_path = Path(config.save_dir) / f"{config.run_name}_metrics.jsonl"
+        metrics_path.write_text("")
+
     for step in range(config.steps):
+        objective_before = objective_locality(model.rho(), model.graph, model.dims)
+
         if config.state_updates_per_step > 0:
             for _ in range(config.state_updates_per_step):
                 model.psi = apply_random_two_site_unitary_step(
@@ -73,6 +83,24 @@ def evolve(model: D0Model, config: EvolutionConfig, *, rng: np.random.Generator 
             k_edges=config.k_edges,
             keep_fraction=config.keep_fraction,
         )
+
+        objective_after = objective_locality(model.rho(), model.graph, model.dims)
+        delta = float(objective_after - objective_before)
+        if not np.isfinite(delta):
+            raise ValueError("Objective change became non-finite during evolution")
+
+        if metrics_path is not None:
+            with metrics_path.open("a", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "step": step,
+                        "objective_before": float(objective_before),
+                        "objective_after": float(objective_after),
+                        "delta": delta,
+                    },
+                    f,
+                )
+                f.write("\n")
 
         if config.save_dir is not None:
             config.save_dir.mkdir(parents=True, exist_ok=True)
