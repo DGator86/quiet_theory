@@ -1,14 +1,14 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import numpy as np
 
 
 def apply_two_site_unitary(
     psi: np.ndarray,
-    dims: list[int] | tuple[int, ...],
+    U: np.ndarray,
     i: int,
     j: int,
-    U: np.ndarray,
+    dims: list[int] | tuple[int, ...],
 ) -> np.ndarray:
     """
     Apply a two-site unitary U on sites (i, j) to a pure state psi.

@@ -52,7 +52,7 @@ def test_apply_two_site_unitary_preserves_norm() -> None:
     psi = psi / np.linalg.norm(psi)
 
     U = _random_unitary(4, seed=2)
-    psi2 = apply_two_site_unitary(psi, dims, 1, 2, U)
+    psi2 = apply_two_site_unitary(psi, U, 1, 2, dims)
 
     assert np.isclose(np.linalg.norm(psi2), 1.0, atol=1e-10)
 
@@ -61,9 +61,9 @@ def test_apply_two_site_unitary_out_of_range_raises() -> None:
     psi = np.ones(4, dtype=np.complex128) / 2.0
     U = np.eye(4, dtype=np.complex128)
     with pytest.raises(ValueError):
-        apply_two_site_unitary(psi, [2, 2], -1, 1, U)
+        apply_two_site_unitary(psi, U, -1, 1, [2, 2])
     with pytest.raises(ValueError):
-        apply_two_site_unitary(psi, [2, 2], 0, 2, U)
+        apply_two_site_unitary(psi, U, 0, 2, [2, 2])
 
 
 def test_mi_matrix_is_symmetric_with_zero_diagonal() -> None:
