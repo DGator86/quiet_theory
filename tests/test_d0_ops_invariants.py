@@ -80,6 +80,23 @@ def test_mi_matrix_is_symmetric_with_zero_diagonal() -> None:
     assert np.allclose(np.diag(M), 0.0, atol=1e-12)
 
 
+def test_apply_edge_unitary_matches_two_site_update() -> None:
+    rng = np.random.default_rng(7)
+    dims = [2, 3]
+    psi = rng.normal(size=6) + 1j * rng.normal(size=6)
+    psi = psi.astype(np.complex128)
+    psi = psi / np.linalg.norm(psi)
+
+    U = _random_unitary(6, seed=8)
+
+    model = D0Model(graph=D0Graph.chain(2), dims=dims, psi=psi.copy())
+    expected = apply_two_site_unitary(psi, U, 0, 1, dims)
+
+    model.apply_edge_unitary(0, 1, U)
+
+    assert np.allclose(model.psi, expected)
+
+
 def test_evolution_config_accepts_state_updates_and_rewires() -> None:
     rng = np.random.default_rng(4)
     dims = [2, 2, 2]
