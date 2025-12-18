@@ -82,12 +82,19 @@ def apply_random_two_site_unitary_step(
     """
     Pick a random existing edge (i,j), apply a Haar-random 2-site unitary on that pair.
     """
-    edges = list(graph.edges)
+    dims_list = [int(d) for d in dims]
+    n = len(dims_list)
+
+    edges = [
+        (int(a), int(b))
+        for a, b in graph.edges
+        if 0 <= int(a) < n and 0 <= int(b) < n and int(a) != int(b)
+    ]
     if not edges:
         return psi
 
     i, j = edges[int(rng.integers(0, len(edges)))]
-    di = int(dims[int(i)])
-    dj = int(dims[int(j)])
+    di = dims_list[i]
+    dj = dims_list[j]
     U = _haar_random_unitary(di * dj, rng)
-    return apply_two_site_unitary(psi, U, int(i), int(j), list(dims))
+    return apply_two_site_unitary(psi, U, i, j, dims_list)

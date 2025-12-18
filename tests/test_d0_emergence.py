@@ -41,3 +41,24 @@ def test_emergent_graph_adds_edge_after_entangling() -> None:
     MI1 = mi_matrix(m.rho(), dims=dims)
     e1 = emergent_edges(MI1, tau=0.1)
     assert (0, 1) in e1
+
+
+def test_entangling_raises_mi_and_entropy() -> None:
+    dims = [2, 2]
+    psi = np.zeros(4, dtype=np.complex128)
+    psi[0] = 1.0
+
+    model = D0Model(graph=D0Graph.chain(len(dims)), dims=dims, psi=psi)
+
+    mi_before = model.mi((0,), (1,))
+    entropy_before = model.entropy((0,))
+
+    U_hi = np.kron(_H(), np.eye(2, dtype=np.complex128))
+    model.apply_edge_unitary(0, 1, U_hi)
+    model.apply_edge_unitary(0, 1, _CNOT())
+
+    mi_after = model.mi((0,), (1,))
+    entropy_after = model.entropy((0,))
+
+    assert mi_after > mi_before + 0.1
+    assert entropy_after > entropy_before + 0.05

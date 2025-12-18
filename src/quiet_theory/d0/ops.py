@@ -7,7 +7,7 @@ import numpy as np
 
 def apply_two_site_unitary(
     psi: np.ndarray,
-    U: np.ndarray,
+    U: np.ndarray | None = None,
     a: int | None = None,
     b: int | None = None,
     dims: Sequence[int] | None = None,
@@ -25,6 +25,8 @@ def apply_two_site_unitary(
 
     Returns a new statevector (same shape as psi).
     """
+    if U is None:
+        raise TypeError("U must be provided")
     if dims is None:
         raise TypeError("dims must be provided")
 
