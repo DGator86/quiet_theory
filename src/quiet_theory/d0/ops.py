@@ -29,7 +29,7 @@ def apply_two_site_unitary(
     if dims is None:
         raise TypeError("dims must be provided (positional or keyword).")
 
-    # Resolve indices from either naming scheme
+    # Resolve indices from either naming scheme (prefer a/b when provided)
     if a is None and i is not None:
         a = i
     if b is None and j is not None:
